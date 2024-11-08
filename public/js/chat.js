@@ -24,6 +24,16 @@ const $messages = document.querySelector("#messages");
 //templates
 const messageTemplate = document.querySelector("#message-template").innerHTML;
 const locationMessageTemplate = document.querySelector("#location-message-template").innerHTML;
+
+//08/11 user login connection using query qs package
+//Options
+const {username,room} = Qs.parse(location.search, {
+  ignoreQueryPrefix: true, //will remove the ? from url
+})
+
+
+
+
 //challenge to message
 /* socket.on("message", (message) => {
   console.log("message received :", message);
@@ -90,3 +100,7 @@ $sendLocationButton.addEventListener("click", () => {
     });
   });
 });
+
+
+// for the username and room
+socket.emit('join',{username,room});

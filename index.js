@@ -34,14 +34,25 @@ io.on("connection", (socket) => {
 
   // socket.emit("message", "Welcome to the chat app");
 
-  //setting up timestamp for messages so commented above code
-  socket.emit("message", generateMessage("Welcome to the chat app"))
-  socket.broadcast.emit("message", generateMessage("A new user has joined")); // send to all clients except the one who joined
+
   
+  //listener for join
+  socket.on("join", ({ username, room }) => {
+    socket.join(room);
+
+      //setting up timestamp for messages so commented above code
+  socket.emit("message", generateMessage("Welcome to the chat app"))
+  socket.broadcast.to(room).emit("message", generateMessage(`${username} has joined`)); // send to all clients except the one who joined
+  })
+
+  
+
   socket.on("sendMessage", (message, callback) => {
     io.emit("message", generateMessage(message)); //send to all clients
     callback('Delivered!'); //this is third argument in scoket.emit in chatjs
   });
+
+  
 
   // listener for sending the location
   socket.on("sendLocation", (coords, callback) => {
