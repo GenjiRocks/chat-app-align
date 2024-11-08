@@ -3,7 +3,17 @@ const express = require("express");
 const http = require("http");
 const socketio = require("socket.io");
 const { log } = require("console");
-const { generateMessage, generateLocationMessage } = require("./utils/messages");
+const {
+  generateMessage,
+  generateLocationMessage,
+} = require("./utils/messages");
+
+const {
+  addUser,
+  removeUser,
+  getUser,
+  getUsersInRoom,
+} = require("./utils/users");
 
 const app = express();
 
@@ -34,38 +44,49 @@ io.on("connection", (socket) => {
 
   // socket.emit("message", "Welcome to the chat app");
 
-
-  
   //listener for join
-  socket.on("join", ({ username, room }) => {
-    socket.join(room);
+  socket.on("join", (Options, callback) => {
+   
+    const { error, user } = addUser({ id: socket.id, ...Options });
+    if (error) {
+      return callback(error);
+    }
 
-      //setting up timestamp for messages so commented above code
-  socket.emit("message", generateMessage("Welcome to the chat app"))
-  socket.broadcast.to(room).emit("message", generateMessage(`${username} has joined`)); // send to all clients except the one who joined
-  })
+    socket.join(user.room);
 
-  
+    //setting up timestamp for messages so commented above code
+    socket.emit("message", generateMessage(`Admin, Welcome to the chat app`));
+    socket.broadcast.to(user.room).emit("message", generateMessage(`Admin , ${user.username} has joined`)); // send to all clients except the one who joined
 
-  socket.on("sendMessage", (message, callback) => {
-    io.emit("message", generateMessage(message)); //send to all clients
-    callback('Delivered!'); //this is third argument in scoket.emit in chatjs
+    callback();
+
   });
 
-  
+  socket.on("sendMessage", (message, callback) => {
+    const user = getUser(socket.id);
+    io.to(user.room).emit("message", generateMessage(user.username,message)); //send to all clients
+    callback("Delivered!"); //this is third argument in scoket.emit in chatjs
+  });
 
   // listener for sending the location
   socket.on("sendLocation", (coords, callback) => {
-    io.emit(
+    const user = getUser(socket.id);
+    io.to(user.room).emit(
       "locationMessage",
-      generateLocationMessage(`https://google.com/maps?/q=${coords.latitude},${coords.longitude}`)
+      generateLocationMessage(user.username,
+        `https://google.com/maps?/q=${coords.latitude},${coords.longitude}`
+      )
     ); //${coords.latitude}, ${coords.longitude} `
     callback();
   });
 
   //notifying when a user leaves
   socket.on("disconnect", () => {
-    io.emit("message", generateMessage("A user has left")); //send to all clients still connected
+    const user = removeUser(socket.id);
+    if(user){
+      io.to(user.room).emit("message", generateMessage(`Admin ,${user.username} has left`)); //send to all clients still connected
+    }
+    
   });
 });
 
