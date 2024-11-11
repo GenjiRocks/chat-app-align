@@ -57,6 +57,10 @@ io.on("connection", (socket) => {
     //setting up timestamp for messages so commented above code
     socket.emit("message", generateMessage(`Admin, Welcome to the chat app`));
     socket.broadcast.to(user.room).emit("message", generateMessage(`Admin , ${user.username} has joined`)); // send to all clients except the one who joined
+    io.to(user.room).emit("roomData", {
+      room: user.room,
+      users: getUsersInRoom(user.room)
+    })
 
     callback();
 
@@ -85,6 +89,10 @@ io.on("connection", (socket) => {
     const user = removeUser(socket.id);
     if(user){
       io.to(user.room).emit("message", generateMessage(`Admin ,${user.username} has left`)); //send to all clients still connected
+      io.to(user.room).emit("roomData", {
+        room: user.room,
+        users: getUsersInRoom(user.room)
+      })
     }
     
   });
